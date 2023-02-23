@@ -1,0 +1,16 @@
+[
+  {
+    "key": "lod2_place_kaikan",
+    "file": "glb/small_building/tobita_kaikan.glb",
+    "scale": 0.03,
+    "rotate": -90,
+    "y": 0.0
+  },
+  {
+    "key": "lod2_place_toilet",
+    "file": "glb/small_building/toilet.glb",
+    "scale": 0.015,
+    "rotate": -180,
+    "y": 0.0
+  }
+]

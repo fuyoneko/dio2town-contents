@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="jp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      src="https://cdn.jsdelivr.net/gh/fuyoneko/dio2town@v0.0.1/_bundles/dio-2-town-map.js"
+      crossorigin="anonymous"
+    ></script>
+    <title>Editor</title>
+    <script>
+      window.onload = function () {
+        // カメラ、レンダラを作成する
+        const core = new Dio2TownMap.Core(document.getElementById("main"));
+        // DrawIoからデータを取得する
+        const dioParser = new Dio2TownMap.DioParser();
+        dioParser
+          .parse({
+            dioFile: "/map-data.dio", // Draw.ioファイルを取得する
+            polygonFile: "/polygon.json", // ポリゴンファイルを取得する
+          })
+          .then((dataList) => {
+            // Dioデータから3D画面を作成する
+            const mainField = new Dio2TownMap.MainField();
+            mainField.basement(
+              core.scene,
+              dataList,
+              (started, dataCount) => {}
+            );
+
+            // 光源を初期化
+            new Dio2TownMap.Light(core.scene);
+
+            // 画面に対する操作イベントを設定する
+            setup(core, mainField);
+          });
+      };
+
+      /**
+       * 3D画面に対する操作を受信する
+       * また、ホバーを設定する（オブジェクトのタップ中にハイライト表示する）
+       */
+      function setup(core, mainField) {
+        // Firefoxを除くブラウザでは、タッチ中のホバー操作を実装する
+        // Firefoxでは正しく動作しない（2023/02/23時点）ため、Hoverを見送る
+        if (!window.navigator.userAgent.includes("Firefox")) {
+          // @Event : hover-start-orbit
+          // オービットのホバー操作を受信する
+          core.camera.eventDispatcher.addEventListener(
+            "hover-start-orbit",
+            (e) => {
+              // タッチ位置を取得する
+              const touchedObject = core.getControlledObject(
+                e.mousePoint.x,
+                e.mousePoint.y
+              );
+              if (touchedObject) {
+                // タッチ中のオブジェクトをホバー状態にする
+                mainField.hoverWithLabel(touchedObject.label);
+              }
+            }
+          );
+
+          // @Event : hover-cancel-orbit
+          // オービットのホバー操作の終了を受信する
+          core.camera.eventDispatcher.addEventListener(
+            "hover-cancel-orbit",
+            (e) => {
+              // ホバーを解除する
+              mainField.clearHover();
+            }
+          );
+        }
+
+        // @Event : click-orbit
+        // オービットのクリック操作を受信する
+        core.camera.eventDispatcher.addEventListener("click-orbit", (e) => {
+          // タッチ位置を取得する
+          const touchedObject = core.getControlledObject(
+            e.mousePoint.x,
+            e.mousePoint.y
+          );
+          if (touchedObject) {
+            // クリックされたオブジェクトの名前を表示する
+            alert(`クリックされた対象：${touchedObject.label}`);
+          }
+        });
+
+        // @Event : render
+        // カメラの状態が変わったことをオブジェクトに通知する
+        core.eventDispatcher.addEventListener("render", (e) => {
+          try {
+            // カメラのアングル、距離が変更されたことを通知する
+            mainField.didUpdateCameraStatus(
+              e.polarAngle,
+              e.azimuthalAngle,
+              e.distance,
+              core._camera.camera.position
+            );
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="main" style="height: 100vh; width: 100vw"></div>
+  </body>
+</html>
